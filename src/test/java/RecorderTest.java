@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class RecorderTest{
-    public static String filename = "测试文件1.txt";
+    public static String filename = "testfile1.txt";
     public static String frame = "this is first line\nthis is next line\n";
     public static String frame1 = "this is 1st line\nthis is 2th line\n";
 
@@ -33,7 +33,7 @@ public class RecorderTest{
 
     @Test
     public void writeFrame() throws Exception {
-        Recorder recorder = new Recorder("测试文件2.txt");
+        Recorder recorder = new Recorder("testfile2.txt");
         recorder.clearFile();
         recorder.writeFrame(frame);
         recorder.writeFrame(frame1);
