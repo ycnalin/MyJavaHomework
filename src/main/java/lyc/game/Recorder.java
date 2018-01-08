@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 
 public class Recorder {
     private final static String lasRecord = "Collector_Edition.txt";
@@ -35,7 +37,7 @@ public class Recorder {
 
     public void writeFrame(String frame){
         try {
-             out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(userRecord, true)));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(userRecord, true)));
             out.write(frame);
             out.newLine();
         } catch (Exception e) {
@@ -87,6 +89,18 @@ public class Recorder {
     public boolean clearFile(){
         File file = new File(userRecord);
         return file.delete();
+    }
+
+    public boolean selectRecord(String path){
+        JFileChooser jfc=new JFileChooser(path);
+        jfc.setFileSelectionMode(JFileChooser.FILES_ONLY );
+        jfc.showDialog(new JLabel(), "选择");
+        File file=jfc.getSelectedFile();
+        if(file == null || !file.canRead())
+            return false;
+        userRecord = file.getName();
+        System.out.println("Select file "+userRecord);
+        return true;
     }
 
     public static void main(String[] args){

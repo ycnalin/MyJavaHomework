@@ -5,7 +5,6 @@ import java.awt.Graphics;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.io.File;
 import javax.swing.JPanel;
 
 /*
@@ -181,7 +180,7 @@ public class Field extends JPanel {
 
             } else if (key == KeyEvent.VK_SPACE) {
                 if(server.getServerState() != 2) {
-                    server.start(null);
+                    server.start(false);
                     for (Player player : players) {
                         new Thread(player).start();
                     }
@@ -193,9 +192,8 @@ public class Field extends JPanel {
             }
             else if(key == KeyEvent.VK_L){
                 if(server.getServerState() != 2) {
-                    File file = new FileChooser().getFile(System.getProperty("user.dir"));
-                    if(file != null)
-                        server.start(file.getName());
+                    if(server.OpenRecord(System.getProperty("user.dir")))
+                        server.start(true);
                 }
             }
             repaint();

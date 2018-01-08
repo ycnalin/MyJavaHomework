@@ -19,7 +19,6 @@ lyc\formation\CrescentFormation.class
 lyc\life\Color.class
 lyc\formation\SnakeFormation.class
 Main.class
-lyc\game\FileChooser.class
 God.class
 lyc\life\HuluBros.class
 lyc\formation\FishFormation.class

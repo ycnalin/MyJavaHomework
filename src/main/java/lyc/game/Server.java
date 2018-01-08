@@ -1,5 +1,6 @@
 package lyc.game;
 
+import javax.security.auth.login.FailedLoginException;
 import javax.swing.JFrame;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,7 +21,6 @@ public class Server extends JFrame {
     private int huluSurvivors;
     private int snakeSurvivors;
     private int state = 0; //0 start, 1:running ,2:complete,3:replay
-    private int cnt = 0;
     Set<Character> hulu;
     {
         hulu = new HashSet<>();
@@ -45,12 +45,13 @@ public class Server extends JFrame {
         setVisible(true);
     }
 
-
+    /*
+     * 加载葫芦娃大战画面中的一帧
+     */
     public void loadField(StringBuilder frame) {
         if (!frame.toString().equals(field.getFrame().toString())) {  //比较字符串内容而不是指针
             field.setAndPaint(frame);
             recordAnimation(frame.toString());
-
         }
         else
             field.repaint();
@@ -65,11 +66,10 @@ public class Server extends JFrame {
         }
     }
 
+    /*
+     * 处理玩家请求
+     */
     public int processRequest(Player player, int nx, int ny) {
-        StringBuilder level = field.getFrame();
-//        int lx = (player.x() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
-//        int ly = (player.y() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
-//        if(level.charAt(tranformLoc(lx,ly)) == 'd') return 1;//角色死亡。
         if(!player.isAlive()) return 0;
         synchronized (lock) {
             MoveAndAttack(player, nx, ny);
@@ -83,16 +83,17 @@ public class Server extends JFrame {
         }
     }
 
+    /*
+     * 执行移动和攻击
+     */
     private int MoveAndAttack(Player player, int nx, int ny){
         if(nx == 0 && ny == 0) {
             attack(player);
             return 1;
         }
-        int gw = Field.getGridWidth();
-        int gh = Field.getGridHeight();
+
         int lx = (player.x() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
         int ly = (player.y() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
-        //System.out.println(""+ player.getType()+" current at x: "+ lx + " y: "+ly+" nx: "+nx+" ny: "+ny);
 
         StringBuilder level = field.getFrame();
         if(hulu.contains(player.getType())){
@@ -170,37 +171,6 @@ public class Server extends JFrame {
             }
         }
 
-//        int i, j, loc;
-//        if(hulu.contains(player.getType())){
-//            for(i = nx; i >= -nx; --i) {
-//                for(j = 0;j <= ny;--j){
-//                    for(int k = j; k >= -j; --k){
-//                        loc = tranformLoc(lx + i, k + ly);
-//                        if( loc== -1) continue;
-//                        if (level.charAt(loc) == '.'){
-//                            setXY(player, lx + i, k + ly);
-//                            attack(player);
-//                            return 1;
-//                        }
-//                    }
-//                }
-//            }
-//        }else{
-//            for(i = -nx; i <= nx; ++i) {
-//                for (j = ny; j >= -ny; --j) {
-//                    int llx = lx+i, lly = ly + j;
-//                    loc = tranformLoc(llx, lly);
-//                    if( loc== -1)
-//                        continue;
-//                    if (level.charAt(loc) == '.'){
-//                        setXY(player, llx, lly);
-//                        attack(player);
-//                        return 1;
-//                    }
-//                }
-//            }
-//        }
-
         Random rand = new Random();
         if(nx != 0)
             lx = lx + rand.nextInt(nx * 2) - nx;
@@ -214,6 +184,9 @@ public class Server extends JFrame {
         return 1;
     }
 
+    /*
+     * 执行攻击，把绘制新画面
+     */
     private int attack(Player player){
         double prob = 0.5;
         int s = 2, i, j;
@@ -236,7 +209,6 @@ public class Server extends JFrame {
                             if(ex.x() == xpixel && ex.y() == ypixel){
                                 if(ex.isAlive()) {
                                     ex.killPlayer();
-                                    ++cnt;
                                     int llx = (ex.x() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
                                     int lly = (ex.y() - Field.getOFFSET())/Field.getSPACE() + 1;//逻辑位置
                                     int oldLoc = tranformLoc(llx,lly);
@@ -254,6 +226,9 @@ public class Server extends JFrame {
         return 0;
     }
 
+    /*
+     * 坐标转换
+     */
     private int tranformLoc(int lx, int ly){
         int gw = Field.getGridWidth();
         int gh = Field.getGridHeight();
@@ -281,16 +256,22 @@ public class Server extends JFrame {
         //System.out.println(""+player.getType()+" move to: " + lx + ", " + ly );
     }
 
-    public void start(String file) {
-        if(file == null) {
+    /*
+     * 开始运行
+     */
+    public void start(boolean replay) {
+        if(!replay) {
+            recorder.clearFile();
+            //切换到运行态
             this.state = 2;
             this.recordable = true;
             this.loadField(initState);
+            System.out.println("开始运行");
         }
         else {
+            this.recordable = false;
             this.state = 3;
-            recorder.setUserRecord(file);
-            System.out.println(file);
+            System.out.println("开始回放");
         }
     }
 
@@ -317,8 +298,10 @@ public class Server extends JFrame {
     }
 
     public void handOn(){
-        System.out.println("Enter hang on: "+state);
-        System.out.println("按空格开始， L键加载历史记录");
+        //System.out.println("Enter hang on: "+state);
+        System.out.println("请按空格开始游戏， 按L键选择");
+        System.out.println("或者按L键选择选择Collector_Edition，回放精彩记录");
+        System.out.println("或者按L键选择选择User_Records，回放上次记录");
         while(true) {
             while (state != 2 && state != 3) {
                 try {
@@ -344,9 +327,6 @@ public class Server extends JFrame {
         this.initState = initState;
     }
 
-    private void postPrecessing(){
-
-    }
 
     public void setRecorder(Recorder recorder){
         this.recorder = recorder;
@@ -355,6 +335,10 @@ public class Server extends JFrame {
 
     public int getServerState() {
         return state;
+    }
+
+    public boolean OpenRecord(String path){
+        return recorder.selectRecord(path);
     }
 
     public void clearRecords(){
